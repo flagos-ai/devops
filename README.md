@@ -1,4 +1,4 @@
-# Flagos AI DevOps Central
+# FlagOS DevOps Central
 
 This repository is the single source of truth for CI/CD logic across the **Flagos AI** organization. It contains unified GitHub Actions (individual steps) and Reusable Workflows (entire pipelines) to ensure consistency, security, and speed across all our projects.
 
