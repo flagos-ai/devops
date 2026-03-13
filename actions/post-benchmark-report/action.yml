@@ -1,12 +1,12 @@
-name: 'Post Benchmark Report'
-description: 'Upload a benchmark test metric file to a backend HTTP service'
+name: 'Post Pytest Report'
+description: 'Upload a pytest JSON report to a backend HTTP service'
 
 inputs:
   backend_url:
     description: 'Full URL of the backend metrics endpoint'
     required: true
-  results_file:
-    description: 'Path to the benchmark test metric file'
+  report_path:
+    description: 'Path to the pytest JSON report file'
     required: true
   api_token:
     description: 'Bearer token for authentication (optional)'
@@ -19,7 +19,7 @@ inputs:
   file_type:
     description: 'File type identifier'
     required: false
-    default: 'benchmark'
+    default: 'pytest'
   is_zipped:
     description: 'Whether the file is zipped'
     required: false
@@ -34,14 +34,6 @@ inputs:
     default: ''
   job_name:
     description: 'Job name (defaults to github.job)'
-    required: false
-    default: ''
-  commit_sha:
-    description: 'Git commit SHA (defaults to github.sha)'
-    required: false
-    default: ''
-  git_branch:
-    description: 'Git branch name (defaults to github.head_ref or github.ref_name)'
     required: false
     default: ''
   pr_id:
@@ -86,37 +78,23 @@ runs:
         fi
         echo "job_name=$JOB_NAME" >> "$GITHUB_OUTPUT"
 
-        # Resolve commit_sha
-        COMMIT_SHA="${{ inputs.commit_sha }}"
-        if [ -z "$COMMIT_SHA" ]; then
-          COMMIT_SHA="${{ github.sha }}"
-        fi
-        echo "commit_sha=$COMMIT_SHA" >> "$GITHUB_OUTPUT"
-
-        # Resolve git_branch
-        GIT_BRANCH="${{ inputs.git_branch }}"
-        if [ -z "$GIT_BRANCH" ]; then
-          GIT_BRANCH="${{ github.head_ref }}"
-        fi
-        if [ -z "$GIT_BRANCH" ]; then
-          GIT_BRANCH="${{ github.ref_name }}"
-        fi
-        echo "git_branch=$GIT_BRANCH" >> "$GITHUB_OUTPUT"
-
-        # Resolve pr_id
+        # Resolve pr_id (fallback to 0 for push events)
         PR_ID="${{ inputs.pr_id }}"
         if [ -z "$PR_ID" ]; then
           PR_ID="${{ github.event.pull_request.number }}"
         fi
+        if [ -z "$PR_ID" ]; then
+          PR_ID="0"
+        fi
         echo "pr_id=$PR_ID" >> "$GITHUB_OUTPUT"
 
-        # Validate results file exists
-        if [ ! -f "${{ inputs.results_file }}" ]; then
-          echo "::error::Results file not found: ${{ inputs.results_file }}"
+        # Validate report file exists
+        if [ ! -f "${{ inputs.report_path }}" ]; then
+          echo "::error::Report file not found: ${{ inputs.report_path }}"
           if [ "${{ inputs.fail_on_error }}" = "true" ]; then
             exit 1
           else
-            echo "::warning::Results file not found, skipping upload."
+            echo "::warning::Report file not found, skipping upload."
             echo "skip=true" >> "$GITHUB_OUTPUT"
             exit 0
           fi
@@ -129,20 +107,6 @@ runs:
       if: steps.resolve.outputs.skip != 'true'
       shell: bash
       run: |
-        # Determine upload file path
-        RESULTS_FILE="${{ inputs.results_file }}"
-        IS_ZIPPED="${{ inputs.is_zipped }}"
-        UPLOAD_FILE="$RESULTS_FILE"
-
-        if [ "$IS_ZIPPED" != "true" ]; then
-          # Compress the file into a tar.gz archive
-          ARCHIVE_PATH="/tmp/benchmark_results_$(date +%Y%m%d_%H%M%S).tar.gz"
-          tar -czf "$ARCHIVE_PATH" -C "$(dirname "$RESULTS_FILE")" "$(basename "$RESULTS_FILE")"
-          UPLOAD_FILE="$ARCHIVE_PATH"
-          IS_ZIPPED="true"
-          echo "Archive created: $ARCHIVE_PATH ($(du -h "$ARCHIVE_PATH" | cut -f1))"
-        fi
-
         # Build curl command
         CURL_ARGS=(
           -s
@@ -151,22 +115,17 @@ runs:
           -o /tmp/upload_response.txt
           -F "file_format=${{ inputs.file_format }}"
           -F "file_type=${{ inputs.file_type }}"
-          -F "is_zipped=$IS_ZIPPED"
+          -F "is_zipped=${{ inputs.is_zipped }}"
           -F "git_project_name=${{ steps.resolve.outputs.project_name }}"
           -F "workflow_name=${{ steps.resolve.outputs.workflow_name }}"
           -F "job_name=${{ steps.resolve.outputs.job_name }}"
-          -F "commit_sha=${{ steps.resolve.outputs.commit_sha }}"
-          -F "git_branch=${{ steps.resolve.outputs.git_branch }}"
         )
 
-        # Conditionally add pr_id
-        PR_ID="${{ steps.resolve.outputs.pr_id }}"
-        if [ -n "$PR_ID" ]; then
-          CURL_ARGS+=(-F "pr_id=$PR_ID")
-        fi
+        # Always add pr_id (required by backend)
+        CURL_ARGS+=(-F "pr_id=${{ steps.resolve.outputs.pr_id }}")
 
         # Add the file
-        CURL_ARGS+=(-F "file=@${UPLOAD_FILE}")
+        CURL_ARGS+=(-F "file=@${{ inputs.report_path }}")
 
         # Conditionally add auth header
         TOKEN="${{ inputs.api_token }}"
