@@ -27,7 +27,7 @@ jobs:
         id: upload
         uses: ./actions/post-benchmark-report
         with:
-          backend_url: https://httpbin.org
+          backend_url: https://httpbin.org/anything
           report_path: benchmark_metrics.json
           list_code: 'test-benchmark'
           list_name: 'Test Benchmark'
@@ -51,7 +51,7 @@ jobs:
         continue-on-error: true
         uses: ./actions/post-benchmark-report
         with:
-          backend_url: https://httpbin.org
+          backend_url: https://httpbin.org/anything
           report_path: non_existent_report.json
           list_code: 'test-missing'
           header_config: '[{"field":"metric","name":"Metric","required":true,"sortable":true,"type":"string"}]'
@@ -75,7 +75,7 @@ jobs:
         id: upload
         uses: ./actions/post-benchmark-report
         with:
-          backend_url: https://httpbin.org
+          backend_url: https://httpbin.org/anything
           report_path: non_existent_report.json
           list_code: 'test-warn'
           header_config: '[{"field":"metric","name":"Metric","required":true,"sortable":true,"type":"string"}]'
@@ -107,7 +107,7 @@ jobs:
         id: upload
         uses: ./actions/post-benchmark-report
         with:
-          backend_url: https://httpbin.org
+          backend_url: https://httpbin.org/anything
           report_path: benchmark_metrics.json
           list_code: 'test-defaults'
           header_config: '[{"field":"metric","name":"Metric","required":true,"sortable":true,"type":"string"}]'
@@ -152,7 +152,7 @@ jobs:
         id: upload
         uses: ./actions/post-benchmark-report
         with:
-          backend_url: https://httpbin.org
+          backend_url: https://httpbin.org/anything
           report_path: benchmark_metrics.json
           list_code: 'my-list-code'
           header_config: '[{"field":"metric","name":"Metric","required":true,"sortable":true,"type":"string"}]'
