@@ -504,6 +504,9 @@ def list_test_resources(
         container_opts = resolve_container_options(resources, resource_map_path)
         result.append({
             "case_path": str(case_path),
+            "repo": meta.get("repo", ""),
+            "task": meta.get("task", ""),
+            "model": meta.get("model", ""),
             "resources": resources,
             "runner_labels": runner_labels,
             "container_image": container_image,

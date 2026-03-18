@@ -71,7 +71,9 @@ def resource_entry_to_matrix(entry: dict, repo: str = "", task: str = "", model:
     """Convert a list_test_resources entry to a matrix entry."""
     return {
         "case_path": entry["case_path"],
-        "repo": repo or "", "task": task or "", "model": model or "",
+        "repo": entry.get("repo", "") or repo or "",
+        "task": entry.get("task", "") or task or "",
+        "model": entry.get("model", "") or model or "",
         "runner_labels": json.dumps(entry["runner_labels"]),
         "container_image": entry.get("container_image", ""),
         "conda_env": entry.get("conda_env", ""),
