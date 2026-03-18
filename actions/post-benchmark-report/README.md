@@ -15,6 +15,7 @@ A reusable GitHub Action that uploads benchmark data to a backend service, confi
 | `repository_name` | no | `${{ github.repository }}` | Repository name |
 | `workflow_id` | no | `${{ github.run_id }}` | Workflow run ID |
 | `commit_id` | no | `${{ github.sha }}` | GitHub commit SHA |
+| `run_id` | no | `${{ github.run_id }}` | GitHub Actions run ID |
 | `page_size` | no | `10` | Number of items per page for query |
 | `page` | no | `1` | Page number for query |
 | `sort` | no | `created_at` | Sort field for query |
@@ -54,7 +55,7 @@ steps:
          {"field":"value","name":"Value","required":true,"sortable":true,"type":"number"}]
 ```
 
-`repository_name`, `workflow_id`, and `commit_id` are auto-detected from the GitHub context.
+`repository_name`, `workflow_id`, `commit_id`, and `run_id` are auto-detected from the GitHub context.
 
 ### With authentication and query options
 
@@ -117,7 +118,7 @@ Example:
 
 ## Behavior
 
-1. **Resolve inputs**: Defaults are populated from GitHub context (`github.repository`, `github.run_id`, `github.sha`). If `list_name` is empty, it defaults to `list_code`.
+1. **Resolve inputs**: Defaults are populated from GitHub context (`github.repository`, `github.run_id`, `github.sha`). `run_id` also defaults to `github.run_id`. If `list_name` is empty, it defaults to `list_code`.
 2. **Post header config**: Sends the header configuration to `{backend_url}/flagcicd-backend/list/header`. If the list code already exists, the step is treated as a no-op.
 3. **Upload data**: Reads the report file, transforms it into items, and POSTs to `{backend_url}/flagcicd-backend/list/data/{list_code}`.
 4. **Query data**: After a successful upload, queries the list data with pagination and sorting from `{backend_url}/flagcicd-backend/list/data/{list_code}`.
