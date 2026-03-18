@@ -1,5 +1,5 @@
 llm:
-  model: Qwen/Qwen3-0.6B
+  model: /home/gitlab-runner/data/Qwen3-0.6B
   trust_remote_code: true
   tensor_parallel_size: 1
   pipeline_parallel_size: 1
