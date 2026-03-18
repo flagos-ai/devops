@@ -23,15 +23,7 @@ setup:
   - git clone https://github.com/FlagOpen/FlagScale.git && cd FlagScale && pip install .
 
 run:
-  - flagscale inference qwen3 --config ./conf/demo_0_6b.yaml
-  - |
-    pid_file="./outputs/qwen3/inference_logs/pids/host_0_localhost.pid"
-    if [ -f "$pid_file" ]; then
-      pid=$(cat "$pid_file")
-      echo "Waiting for inference process $pid to complete..."
-      while kill -0 "$pid" 2>/dev/null; do sleep 2; done
-      echo "Inference process completed."
-    fi
+  - flagscale inference qwen3 --config ./conf/demo_0_6b.yaml --test
 
 verify:
   log_path: "./outputs/qwen3/inference_logs/host_0_localhost.output"
