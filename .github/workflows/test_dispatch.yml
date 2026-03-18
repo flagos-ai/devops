@@ -74,6 +74,7 @@ jobs:
             --changed-repos-list '${{ steps.detect.outputs.changed_repos_list }}'
 
   run-tests:
+    name: ${{ matrix.repo }}/${{ matrix.task }}/${{ matrix.model }}
     needs: detect-changes
     if: ${{ needs.detect-changes.outputs.matrix != '' && !contains(needs.detect-changes.outputs.matrix, '_none_') }}
     strategy:
