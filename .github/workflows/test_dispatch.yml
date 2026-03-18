@@ -88,16 +88,18 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Container init
-        if: ${{ matrix.container_init != '' }}
-        shell: bash -l {0}
-        run: ${{ matrix.container_init }}
-
       - name: Install runner dependencies
-        run: pip install pyyaml
+        run: |
+          if [ -n "${{ matrix.conda_env }}" ]; then
+            source flagos-user-tests/tools/activate_conda.sh ${{ matrix.conda_env }}
+          fi
+          pip install pyyaml
 
       - name: Run user tests
         run: |
+          if [ -n "${{ matrix.conda_env }}" ]; then
+            source flagos-user-tests/tools/activate_conda.sh ${{ matrix.conda_env }}
+          fi
           ARGS=""
           if [ -n "${{ matrix.case_path }}" ]; then
             ARGS="--case ${{ matrix.case_path }}"

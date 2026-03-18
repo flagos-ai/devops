@@ -451,28 +451,28 @@ def resolve_container_options(resources: dict, resource_map_path: Path) -> dict:
     }
 
 
-def resolve_container_init(
+def resolve_conda_env(
     repo: str, task: str, resources: dict, resource_map_path: Path
 ) -> str:
-    """Resolve container init command for the given platform and repo/task.
+    """Resolve conda environment name for the given platform and repo/task.
 
-    Lookup: platform -> container_init -> "<repo>/<task>" | "<repo>" | "default"
-    Returns "" if no init command is configured.
+    Lookup: platform -> conda_env -> "<repo>/<task>" | "<repo>" | "default"
+    Returns "" if no conda env is configured.
     """
     resource_map = _load_resource_map(resource_map_path)
     platform = resources.get("platform", "")
     pcfg = _get_platform_config(resource_map, platform)
-    init_cmds = pcfg.get("container_init", {})
-    if not init_cmds:
+    conda_envs = pcfg.get("conda_env", {})
+    if not conda_envs:
         return ""
 
     key = f"{repo}/{task}" if task else repo
-    cmd = init_cmds.get(key, "")
-    if not cmd and repo:
-        cmd = init_cmds.get(repo, "")
-    if not cmd:
-        cmd = init_cmds.get("default", "")
-    return cmd
+    env = conda_envs.get(key, "")
+    if not env and repo:
+        env = conda_envs.get(repo, "")
+    if not env:
+        env = conda_envs.get("default", "")
+    return env
 
 
 def list_test_resources(
@@ -498,7 +498,7 @@ def list_test_resources(
         container_image = resolve_container_image(
             meta.get("repo", ""), meta.get("task", ""), resources, resource_map_path
         )
-        container_init = resolve_container_init(
+        conda_env = resolve_conda_env(
             meta.get("repo", ""), meta.get("task", ""), resources, resource_map_path
         )
         container_opts = resolve_container_options(resources, resource_map_path)
@@ -507,7 +507,7 @@ def list_test_resources(
             "resources": resources,
             "runner_labels": runner_labels,
             "container_image": container_image,
-            "container_init": container_init,
+            "conda_env": conda_env,
             **container_opts,
         })
 

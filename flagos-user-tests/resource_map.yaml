@@ -42,10 +42,10 @@ platforms:
       flagscale/inference:    "localhost:5000/flagscale-inference:dev-cu128-py3.12-20260302102033"
       flagscale/hetero_train: "localhost:5000/flagscale-train:dev-cu128-py3.12-20260228210721"
 
-    # Container init commands: run inside the container before test execution
+    # Conda environment to activate inside the container before test execution.
     # Same key format as container_images: "<repo>/<task>" | "<repo>" | "default"
-    container_init:
-      flagscale/inference: "conda activate flagscale-inference"
+    conda_env:
+      flagscale/inference: "flagscale-inference"
 
     # Container runtime options
     container_options: "--gpus all --shm-size=500g --user root --ulimit nofile=65535:65535"

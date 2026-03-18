@@ -21,8 +21,8 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).parent))
 from run_user_tests import (
     list_test_resources,
+    resolve_conda_env,
     resolve_container_image,
-    resolve_container_init,
     resolve_container_options,
     resolve_runner_labels,
 )
@@ -37,7 +37,7 @@ def make_entry(case_path: str, meta: dict, resources: dict, resource_map_path: P
         meta.get("repo", ""), meta.get("task", ""),
         resources, resource_map_path,
     )
-    init_cmd = resolve_container_init(
+    init_cmd = resolve_conda_env(
         meta.get("repo", ""), meta.get("task", ""),
         resources, resource_map_path,
     )
@@ -49,7 +49,7 @@ def make_entry(case_path: str, meta: dict, resources: dict, resource_map_path: P
         "model": meta.get("model", ""),
         "runner_labels": json.dumps(labels),
         "container_image": image,
-        "container_init": init_cmd,
+        "conda_env": init_cmd,
         "container_options": opts["container_options"],
         "container_volumes": json.dumps(opts["container_volumes"]),
     }
@@ -60,7 +60,7 @@ def make_empty_entry(**kwargs) -> dict:
     return {
         "case_path": "", "repo": "", "task": "", "model": "",
         "runner_labels": json.dumps(["self-hosted"]),
-        "container_image": "", "container_init": "",
+        "container_image": "", "conda_env": "",
         "container_options": "",
         "container_volumes": json.dumps([]),
         **kwargs,
@@ -74,7 +74,7 @@ def resource_entry_to_matrix(entry: dict, repo: str = "", task: str = "", model:
         "repo": repo or "", "task": task or "", "model": model or "",
         "runner_labels": json.dumps(entry["runner_labels"]),
         "container_image": entry.get("container_image", ""),
-        "container_init": entry.get("container_init", ""),
+        "conda_env": entry.get("conda_env", ""),
         "container_options": entry.get("container_options", ""),
         "container_volumes": json.dumps(entry.get("container_volumes", [])),
     }
