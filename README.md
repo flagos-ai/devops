@@ -7,13 +7,21 @@ This repository is the single source of truth for CI/CD logic across the **FlagO
 ```text
 flagos-ai/FlagOps/
 ├── .github/
-│   └── workflows/          # Reusable Workflows (The "Whole Pipeline")
-│       └── ci-python.yml
-├── actions/                # Custom Actions (The "Individual Steps")
+│   └── workflows/                  # Reusable Workflows & CI tests
+│       ├── ci-shared.yml
+│       ├── test-post-pytest-report.yml
+│       └── test-post-benchmark-report.yml
+├── actions/                        # Custom Actions (The "Individual Steps")
 │   ├── setup-poetry/
 │   │   └── action.yml
-│   └── notify-slack/
-│       └── action.yml
+│   ├── notify-slack/
+│   │   └── action.yml
+│   ├── post-pytest-report/         # Upload pytest JSON reports
+│   │   ├── action.yml
+│   │   └── README.md
+│   └── post-benchmark-report/      # Upload benchmark data with custom columns
+│       ├── action.yml
+│       └── README.md
 └── README.md
 
 ```
@@ -70,6 +78,15 @@ jobs:
           install-dev-deps: "true"
 
 ```
+
+### Available Actions
+
+| Action | Description |
+|---|---|
+| [`setup-poetry`](actions/setup-poetry/) | Set up Poetry environment |
+| [`notify-slack`](actions/notify-slack/) | Send Slack notifications |
+| [`post-pytest-report`](actions/post-pytest-report/) | Upload pytest JSON reports to backend |
+| [`post-benchmark-report`](actions/post-benchmark-report/) | Upload benchmark data with custom table columns |
 
 ---
 

@@ -2,9 +2,13 @@ name: Test post-benchmark-report action
 
 on:
   push:
-    paths: ['actions/post-benchmark-report/**']
+    paths:
+      - 'actions/post-benchmark-report/**'
+      - '.github/workflows/test-post-benchmark-report.yml'
   pull_request:
-    paths: ['actions/post-benchmark-report/**']
+    paths:
+      - 'actions/post-benchmark-report/**'
+      - '.github/workflows/test-post-benchmark-report.yml'
   workflow_dispatch:
 
 jobs:
@@ -18,8 +22,8 @@ jobs:
         run: |
           cat > benchmark_metrics.json <<'EOF'
           {
-            "latency": { "values": [1.2, 3.4, 5.6] },
-            "throughput": { "values": [100, 200, 300] }
+            "latency": {"p50": 1.2, "p99": 3.4, "mean": 2.0},
+            "throughput": {"p50": 100, "p99": 80, "mean": 95}
           }
           EOF
 
@@ -31,13 +35,15 @@ jobs:
           report_path: benchmark_metrics.json
           list_code: 'test-benchmark'
           list_name: 'Test Benchmark'
-          header_config: '[{"field":"metric","name":"Metric","required":true,"sortable":true,"type":"string"},{"field":"value","name":"Value","required":true,"sortable":true,"type":"number"}]'
+          header_config: '[{"field":"metric","name":"Metric","required":true,"sortable":true,"type":"string"},{"field":"p50","name":"P50","required":true,"sortable":true,"type":"number"},{"field":"p99","name":"P99","required":true,"sortable":true,"type":"number"},{"field":"mean","name":"Mean","required":true,"sortable":true,"type":"number"}]'
           fail_on_error: 'false'
 
-      - name: Check upload output exists
+      - name: Check all outputs exist
         run: |
           echo "header_status=${{ steps.upload.outputs.header_status }}"
           echo "upload_status=${{ steps.upload.outputs.upload_status }}"
+          echo "query_status=${{ steps.upload.outputs.query_status }}"
+          echo "query_result=${{ steps.upload.outputs.query_result }}"
           echo "Action completed without hard failure"
 
   test-fail-on-missing-file:
@@ -54,7 +60,7 @@ jobs:
           backend_url: https://httpbin.org/anything
           report_path: non_existent_report.json
           list_code: 'test-missing'
-          header_config: '[{"field":"metric","name":"Metric","required":true,"sortable":true,"type":"string"}]'
+          header_config: '[{"field":"metric","name":"Metric","required":true,"sortable":true,"type":"string"},{"field":"value","name":"Value","required":true,"sortable":true,"type":"number"}]'
           fail_on_error: 'true'
 
       - name: Assert step failed
@@ -78,7 +84,7 @@ jobs:
           backend_url: https://httpbin.org/anything
           report_path: non_existent_report.json
           list_code: 'test-warn'
-          header_config: '[{"field":"metric","name":"Metric","required":true,"sortable":true,"type":"string"}]'
+          header_config: '[{"field":"metric","name":"Metric","required":true,"sortable":true,"type":"string"},{"field":"value","name":"Value","required":true,"sortable":true,"type":"number"}]'
           fail_on_error: 'false'
 
       - name: Assert step succeeded
@@ -99,7 +105,8 @@ jobs:
         run: |
           cat > benchmark_metrics.json <<'EOF'
           {
-            "test_metric": { "values": [42] }
+            "latency": {"p50": 1.2, "p99": 3.4},
+            "throughput": {"p50": 100, "p99": 80}
           }
           EOF
 
@@ -110,7 +117,7 @@ jobs:
           backend_url: https://httpbin.org/anything
           report_path: benchmark_metrics.json
           list_code: 'test-defaults'
-          header_config: '[{"field":"metric","name":"Metric","required":true,"sortable":true,"type":"string"}]'
+          header_config: '[{"field":"metric","name":"Metric","required":true,"sortable":true,"type":"string"},{"field":"p50","name":"P50","required":true,"sortable":true,"type":"number"},{"field":"p99","name":"P99","required":true,"sortable":true,"type":"number"}]'
           fail_on_error: 'false'
 
       - name: Verify resolved defaults via upload response
@@ -119,20 +126,25 @@ jobs:
           echo "Response: $RESPONSE"
 
           # httpbin echoes JSON body back under "json" key
-          REPO=$(echo "$RESPONSE" | jq -r '.json.repository_name // empty')
-          WORKFLOW=$(echo "$RESPONSE" | jq -r '.json.workflow_id // empty')
-          COMMIT=$(echo "$RESPONSE" | jq -r '.json.commit_id // empty')
+          REPO=$(echo "$RESPONSE" | jq -r '.json.items[0].repository_name // empty')
+          WORKFLOW=$(echo "$RESPONSE" | jq -r '.json.items[0].workflow_id // empty')
+          COMMIT=$(echo "$RESPONSE" | jq -r '.json.items[0].commit_id // empty')
+          RUN_ID=$(echo "$RESPONSE" | jq -r '.json.items[0].run_id // empty')
 
           echo "repository_name = $REPO"
-          echo "workflow_id = $WORKFLOW"
-          echo "commit_id = $COMMIT"
+          echo "workflow_id     = $WORKFLOW"
+          echo "commit_id       = $COMMIT"
+          echo "run_id          = $RUN_ID"
 
           # These should be non-empty when resolved from github context
-          if [ -n "$REPO" ]; then
-            echo "repository_name resolved correctly"
-          else
-            echo "::warning::repository_name was empty (httpbin may not echo JSON body)"
-          fi
+          for field in REPO WORKFLOW COMMIT RUN_ID; do
+            value=$(eval echo "\$$field")
+            if [ -n "$value" ]; then
+              echo "$field resolved correctly: $value"
+            else
+              echo "::warning::$field was empty (httpbin may not echo JSON body)"
+            fi
+          done
 
   test-list-name-defaults-to-list-code:
     name: list_name defaults to list_code when not provided
@@ -144,7 +156,8 @@ jobs:
         run: |
           cat > benchmark_metrics.json <<'EOF'
           {
-            "test_metric": { "values": [1] }
+            "latency": {"p50": 1.2, "p99": 3.4},
+            "throughput": {"p50": 100, "p99": 80}
           }
           EOF
 
@@ -155,7 +168,7 @@ jobs:
           backend_url: https://httpbin.org/anything
           report_path: benchmark_metrics.json
           list_code: 'my-list-code'
-          header_config: '[{"field":"metric","name":"Metric","required":true,"sortable":true,"type":"string"}]'
+          header_config: '[{"field":"metric","name":"Metric","required":true,"sortable":true,"type":"string"},{"field":"p50","name":"P50","required":true,"sortable":true,"type":"number"},{"field":"p99","name":"P99","required":true,"sortable":true,"type":"number"}]'
           fail_on_error: 'false'
 
       - name: Verify list_name defaulted to list_code
@@ -172,3 +185,251 @@ jobs:
           else
             echo "::warning::Could not verify list_name default (httpbin may not echo JSON body)"
           fi
+
+  test-custom-pagination-and-sorting:
+    name: Custom pagination and sorting params are passed correctly
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Create dummy benchmark report
+        run: |
+          cat > benchmark_metrics.json <<'EOF'
+          {
+            "latency": {"p50": 1.2, "p99": 3.4},
+            "throughput": {"p50": 100, "p99": 80}
+          }
+          EOF
+
+      - name: Run post-benchmark-report with custom query params
+        id: upload
+        uses: ./actions/post-benchmark-report
+        with:
+          backend_url: https://httpbin.org/anything
+          report_path: benchmark_metrics.json
+          list_code: 'test-pagination'
+          header_config: '[{"field":"metric","name":"Metric","required":true,"sortable":true,"type":"string"},{"field":"p50","name":"P50","required":true,"sortable":true,"type":"number"},{"field":"p99","name":"P99","required":true,"sortable":true,"type":"number"}]'
+          page_size: '5'
+          page: '2'
+          sort: 'updated_at'
+          order: 'asc'
+          fail_on_error: 'false'
+
+      - name: Verify query params in query response
+        run: |
+          echo "query_status=${{ steps.upload.outputs.query_status }}"
+          echo "query_result=${{ steps.upload.outputs.query_result }}"
+
+          RESULT='${{ steps.upload.outputs.query_result }}'
+          if [ -n "$RESULT" ]; then
+            # httpbin echoes query args back under "args" key
+            PAGE_SIZE=$(echo "$RESULT" | jq -r '.args.page_size // empty')
+            PAGE=$(echo "$RESULT" | jq -r '.args.page // empty')
+            SORT=$(echo "$RESULT" | jq -r '.args.sort // empty')
+            ORDER=$(echo "$RESULT" | jq -r '.args.order // empty')
+
+            echo "page_size=$PAGE_SIZE page=$PAGE sort=$SORT order=$ORDER"
+
+            [ "$PAGE_SIZE" = "5" ] && echo "page_size correct" || echo "::warning::page_size mismatch"
+            [ "$PAGE" = "2" ] && echo "page correct" || echo "::warning::page mismatch"
+            [ "$SORT" = "updated_at" ] && echo "sort correct" || echo "::warning::sort mismatch"
+            [ "$ORDER" = "asc" ] && echo "order correct" || echo "::warning::order mismatch"
+          else
+            echo "::warning::query_result was empty, cannot verify query params"
+          fi
+
+  test-api-token-passed-as-bearer:
+    name: api_token is sent as Bearer auth header
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Create dummy benchmark report
+        run: |
+          cat > benchmark_metrics.json <<'EOF'
+          {
+            "latency": {"p50": 1.2, "p99": 3.4},
+            "throughput": {"p50": 100, "p99": 80}
+          }
+          EOF
+
+      - name: Run post-benchmark-report with api_token
+        id: upload
+        uses: ./actions/post-benchmark-report
+        with:
+          backend_url: https://httpbin.org/anything
+          report_path: benchmark_metrics.json
+          list_code: 'test-auth'
+          header_config: '[{"field":"metric","name":"Metric","required":true,"sortable":true,"type":"string"},{"field":"p50","name":"P50","required":true,"sortable":true,"type":"number"},{"field":"p99","name":"P99","required":true,"sortable":true,"type":"number"}]'
+          api_token: 'test-token-abc123'
+          fail_on_error: 'false'
+
+      - name: Verify Bearer token in upload response
+        run: |
+          RESPONSE=$(cat /tmp/upload_response.txt 2>/dev/null || echo '{}')
+          echo "Response: $RESPONSE"
+
+          # httpbin echoes headers back
+          AUTH_HEADER=$(echo "$RESPONSE" | jq -r '.headers.Authorization // .headers.authorization // empty')
+          echo "Authorization header: $AUTH_HEADER"
+
+          if [ "$AUTH_HEADER" = "Bearer test-token-abc123" ]; then
+            echo "Bearer token passed correctly"
+          else
+            echo "::warning::Could not verify Bearer token (got: $AUTH_HEADER)"
+          fi
+
+  test-custom-run-id:
+    name: Custom run_id is passed to data upload
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Create dummy benchmark report
+        run: |
+          cat > benchmark_metrics.json <<'EOF'
+          {
+            "latency": {"p50": 1.2, "p99": 3.4},
+            "throughput": {"p50": 100, "p99": 80}
+          }
+          EOF
+
+      - name: Run post-benchmark-report with custom run_id
+        id: upload
+        uses: ./actions/post-benchmark-report
+        with:
+          backend_url: https://httpbin.org/anything
+          report_path: benchmark_metrics.json
+          list_code: 'test-run-id'
+          header_config: '[{"field":"metric","name":"Metric","required":true,"sortable":true,"type":"string"},{"field":"p50","name":"P50","required":true,"sortable":true,"type":"number"},{"field":"p99","name":"P99","required":true,"sortable":true,"type":"number"}]'
+          run_id: 'custom-run-12345'
+          fail_on_error: 'false'
+
+      - name: Verify custom run_id in upload response
+        run: |
+          RESPONSE=$(cat /tmp/upload_response.txt 2>/dev/null || echo '{}')
+          echo "Response: $RESPONSE"
+
+          RUN_ID=$(echo "$RESPONSE" | jq -r '.json.items[0].run_id // empty')
+          echo "run_id = $RUN_ID"
+
+          if [ "$RUN_ID" = "custom-run-12345" ]; then
+            echo "Custom run_id passed correctly"
+          else
+            echo "::warning::Could not verify custom run_id (got: $RUN_ID)"
+          fi
+
+  test-object-value-subfield-extraction:
+    name: Object values are extracted by sub-field names
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Create benchmark report with object values
+        run: |
+          cat > benchmark_metrics.json <<'EOF'
+          {
+            "latency": {"p50": 1.2, "p99": 3.4, "mean": 2.0},
+            "throughput": {"p50": 100, "p99": 80, "mean": 95}
+          }
+          EOF
+
+      - name: Run post-benchmark-report with multi-field header_config
+        id: upload
+        uses: ./actions/post-benchmark-report
+        with:
+          backend_url: https://httpbin.org/anything
+          report_path: benchmark_metrics.json
+          list_code: 'test-object-value'
+          header_config: '[{"field":"metric","name":"Metric","required":true,"sortable":true,"type":"string"},{"field":"p50","name":"P50","required":true,"sortable":true,"type":"number"},{"field":"p99","name":"P99","required":true,"sortable":true,"type":"number"},{"field":"mean","name":"Mean","required":true,"sortable":true,"type":"number"}]'
+          fail_on_error: 'false'
+
+      - name: Verify sub-fields extracted correctly
+        run: |
+          RESPONSE=$(cat /tmp/upload_response.txt 2>/dev/null || echo '{}')
+          echo "Response: $RESPONSE"
+
+          # Verify first item (latency)
+          METRIC=$(echo "$RESPONSE" | jq -r '.json.items[0].metric // empty')
+          P50=$(echo "$RESPONSE" | jq -r '.json.items[0].p50 // empty')
+          P99=$(echo "$RESPONSE" | jq -r '.json.items[0].p99 // empty')
+          MEAN=$(echo "$RESPONSE" | jq -r '.json.items[0].mean // empty')
+
+          echo "metric=$METRIC p50=$P50 p99=$P99 mean=$MEAN"
+
+          [ "$METRIC" = "latency" ] && echo "metric correct" || echo "::warning::metric mismatch (got: $METRIC)"
+          [ "$P50" = "1.2" ] && echo "p50 correct" || echo "::warning::p50 mismatch (got: $P50)"
+          [ "$P99" = "3.4" ] && echo "p99 correct" || echo "::warning::p99 mismatch (got: $P99)"
+          [ "$MEAN" = "2" ] && echo "mean correct" || echo "::warning::mean mismatch (got: $MEAN)"
+
+          # Verify item count
+          COUNT=$(echo "$RESPONSE" | jq '.json.items | length')
+          echo "items count: $COUNT"
+          [ "$COUNT" = "2" ] && echo "item count correct" || echo "::warning::expected 2 items (got: $COUNT)"
+
+  test-validation-fails-on-non-object-values:
+    name: Validation fails when report values are not objects
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Create report with array values (invalid format)
+        run: |
+          cat > benchmark_metrics.json <<'EOF'
+          {
+            "elapsed time": [8572.3, 766.4, 308.1],
+            "throughput": [1.4, 16.2, 39.9]
+          }
+          EOF
+
+      - name: Run post-benchmark-report with invalid report (fail_on_error=true)
+        id: upload
+        continue-on-error: true
+        uses: ./actions/post-benchmark-report
+        with:
+          backend_url: https://httpbin.org/anything
+          report_path: benchmark_metrics.json
+          list_code: 'test-validation'
+          header_config: '[{"field":"metric","name":"Metric","required":true,"sortable":true,"type":"string"},{"field":"p50","name":"P50","required":true,"sortable":true,"type":"number"}]'
+          fail_on_error: 'true'
+
+      - name: Assert step failed due to validation
+        run: |
+          if [ "${{ steps.upload.outcome }}" != "failure" ]; then
+            echo "::error::Expected failure but got ${{ steps.upload.outcome }}"
+            exit 1
+          fi
+          echo "Action correctly failed on non-object report values"
+
+  test-validation-warns-on-missing-fields:
+    name: Validation warns when report is missing expected fields
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Create report with missing sub-fields
+        run: |
+          cat > benchmark_metrics.json <<'EOF'
+          {
+            "latency": {"p50": 1.2},
+            "throughput": {"p50": 100}
+          }
+          EOF
+
+      - name: Run post-benchmark-report with mismatched fields (fail_on_error=false)
+        id: upload
+        uses: ./actions/post-benchmark-report
+        with:
+          backend_url: https://httpbin.org/anything
+          report_path: benchmark_metrics.json
+          list_code: 'test-validation-warn'
+          header_config: '[{"field":"metric","name":"Metric","required":true,"sortable":true,"type":"string"},{"field":"p50","name":"P50","required":true,"sortable":true,"type":"number"},{"field":"p99","name":"P99","required":true,"sortable":true,"type":"number"}]'
+          fail_on_error: 'false'
+
+      - name: Assert step succeeded with warning
+        run: |
+          if [ "${{ steps.upload.outcome }}" != "success" ]; then
+            echo "::error::Expected success but got ${{ steps.upload.outcome }}"
+            exit 1
+          fi
+          echo "Action correctly warned but did not fail on missing fields"
