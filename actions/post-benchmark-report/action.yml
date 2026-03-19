@@ -205,6 +205,8 @@ runs:
       id: upload
       if: steps.resolve.outputs.skip != 'true'
       shell: bash
+      env:
+        HEADER_CONFIG: ${{ inputs.header_config }}
       run: |
         set -euo pipefail
 
@@ -212,24 +214,58 @@ runs:
         BACKEND_URL="${BACKEND_URL%/}"
         LIST_CODE="${{ inputs.list_code }}"
 
+        # Validate report values match header_config fields
+        EXPECTED_FIELDS=$(echo "$HEADER_CONFIG" | jq -r '.[1:][].field')
+        VALIDATION_ERRORS=""
+        for metric in $(jq -r 'keys[]' "${{ inputs.report_path }}"); do
+          VALUE_TYPE=$(jq -r --arg m "$metric" '.[$m] | type' "${{ inputs.report_path }}")
+          if [ "$VALUE_TYPE" != "object" ]; then
+            VALIDATION_ERRORS+="  metric '$metric': value is '$VALUE_TYPE', expected 'object'\n"
+            continue
+          fi
+          for field in $EXPECTED_FIELDS; do
+            HAS_FIELD=$(jq -r --arg m "$metric" --arg f "$field" '.[$m] | has($f)' "${{ inputs.report_path }}")
+            if [ "$HAS_FIELD" != "true" ]; then
+              VALIDATION_ERRORS+="  metric '$metric': missing field '$field'\n"
+            fi
+          done
+        done
+        if [ -n "$VALIDATION_ERRORS" ]; then
+          echo "::error::Report validation failed — field mismatch between report and header_config:"
+          echo -e "$VALIDATION_ERRORS"
+          if [ "${{ inputs.fail_on_error }}" = "true" ]; then
+            exit 1
+          else
+            echo "::warning::Skipping data upload due to validation errors."
+            echo "status=422" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+        fi
+
         # Read report file and transform into items array
-        # Input format:  { "metric_name": { "values": [...] }, ... }
-        # Output format: { "items": [ { "metric": "...", "values": [...], "commit_id": "...", "repository_name": "...", "workflow_id": "..." } ] }
+        # Input format:  { "metric_name": {"field1": ..., "field2": ...}, ... }
+        #   value is an object whose keys match header_config field names
+        # Output format: { "items": [ { "<hc_field0>": key, "<hc_field1>": val, ..., "commit_id": "...", ... } ] }
         DATA_PAYLOAD=$(jq -n \
           --arg repository_name "${{ steps.resolve.outputs.repository_name }}" \
           --arg workflow_id "${{ steps.resolve.outputs.workflow_id }}" \
           --arg commit_id "${{ steps.resolve.outputs.commit_id }}" \
           --arg run_id "${{ steps.resolve.outputs.run_id }}" \
+          --argjson header_config "$HEADER_CONFIG" \
           --slurpfile report "${{ inputs.report_path }}" \
           '{
-            items: [ $report[0] | to_entries[] | {
-              metric: .key,
-              values: .value.values,
-              commit_id: $commit_id,
-              repository_name: $repository_name,
-              workflow_id: $workflow_id,
-              run_id: $run_id
-            } ]
+            items: [ $report[0] | to_entries[] | . as $entry |
+              ([ $header_config | to_entries[] | .value.field as $f |
+                if .key == 0 then {($f): $entry.key}
+                else {($f): $entry.value[$f]}
+                end
+              ] | add) + {
+                commit_id: $commit_id,
+                repository_name: $repository_name,
+                workflow_id: $workflow_id,
+                run_id: $run_id
+              }
+            ]
           }')
 
         echo "=== Post list data ==="
