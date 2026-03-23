@@ -217,19 +217,19 @@ runs:
         # Validate report values match header_config fields
         EXPECTED_FIELDS=$(echo "$HEADER_CONFIG" | jq -r '.[1:][].field')
         VALIDATION_ERRORS=""
-        for metric in $(jq -r 'keys[]' "${{ inputs.report_path }}"); do
+        while IFS= read -r metric; do
           VALUE_TYPE=$(jq -r --arg m "$metric" '.[$m] | type' "${{ inputs.report_path }}")
           if [ "$VALUE_TYPE" != "object" ]; then
             VALIDATION_ERRORS+="  metric '$metric': value is '$VALUE_TYPE', expected 'object'\n"
             continue
           fi
-          for field in $EXPECTED_FIELDS; do
+          while IFS= read -r field; do
             HAS_FIELD=$(jq -r --arg m "$metric" --arg f "$field" '.[$m] | has($f)' "${{ inputs.report_path }}")
             if [ "$HAS_FIELD" != "true" ]; then
               VALIDATION_ERRORS+="  metric '$metric': missing field '$field'\n"
             fi
-          done
-        done
+          done <<< "$EXPECTED_FIELDS"
+        done < <(jq -r 'keys[]' "${{ inputs.report_path }}")
         if [ -n "$VALIDATION_ERRORS" ]; then
           echo "::error::Report validation failed — field mismatch between report and header_config:"
           echo -e "$VALIDATION_ERRORS"
