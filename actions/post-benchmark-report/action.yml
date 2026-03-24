@@ -281,7 +281,7 @@ runs:
           }')
 
         echo "=== Post list data ==="
-        echo "URL: ${BACKEND_URL}/flagcicd-backend/list/data/${LIST_CODE}"
+        echo "URL: ${BACKEND_URL}/list/data/${LIST_CODE}"
         echo "Items count: $(echo "$DATA_PAYLOAD" | jq '.items | length')"
         echo "Payload (first item sample):"
         echo "$DATA_PAYLOAD" | jq '{items_count: (.items | length), first_item: .items[0]}'
