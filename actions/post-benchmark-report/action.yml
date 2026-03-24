@@ -170,7 +170,7 @@ runs:
           }')
 
         echo "=== Post header config ==="
-        echo "URL: ${BACKEND_URL}/flagcicd-backend/list/header"
+        echo "URL: ${BACKEND_URL}/list/header"
         echo "Payload:"
         echo "$HEADER_PAYLOAD" | jq .
 
@@ -190,7 +190,7 @@ runs:
         # Add user ID header
         CURL_ARGS+=(-H "x-user-id: ${{ inputs.user_id }}")
 
-        HTTP_STATUS=$(curl "${CURL_ARGS[@]}" "${BACKEND_URL}/flagcicd-backend/list/header")
+        HTTP_STATUS=$(curl "${CURL_ARGS[@]}" "${BACKEND_URL}/list/header")
 
         echo "HTTP status: $HTTP_STATUS"
         echo "Response:"
@@ -302,7 +302,7 @@ runs:
         # Add user ID header
         CURL_ARGS+=(-H "x-user-id: ${{ inputs.user_id }}")
 
-        HTTP_STATUS=$(curl "${CURL_ARGS[@]}" "${BACKEND_URL}/flagcicd-backend/list/data/${LIST_CODE}")
+        HTTP_STATUS=$(curl "${CURL_ARGS[@]}" "${BACKEND_URL}/list/data/${LIST_CODE}")
 
         echo "HTTP status: $HTTP_STATUS"
         echo "Response:"
@@ -333,7 +333,7 @@ runs:
         # Build query parameters (pagination + sorting only, no metadata filters)
         QUERY_PARAMS="page_size=${{ inputs.page_size }}&page=${{ inputs.page }}&sort=${{ inputs.sort }}&order=${{ inputs.order }}"
 
-        QUERY_URL="${BACKEND_URL}/flagcicd-backend/list/data/${LIST_CODE}?${QUERY_PARAMS}"
+        QUERY_URL="${BACKEND_URL}/list/data/${LIST_CODE}?${QUERY_PARAMS}"
         echo "=== Query list data ==="
         echo "URL: $QUERY_URL"
 
