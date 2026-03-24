@@ -33,6 +33,7 @@ jobs:
         with:
           backend_url: https://httpbin.org/anything
           report_path: benchmark_metrics.json
+          user_id: '000000000000000000'
           list_code: 'test-benchmark'
           list_name: 'Test Benchmark'
           header_config: '[{"field":"metric","name":"Metric","required":true,"sortable":true,"type":"string"},{"field":"p50","name":"P50","required":true,"sortable":true,"type":"number"},{"field":"p99","name":"P99","required":true,"sortable":true,"type":"number"},{"field":"mean","name":"Mean","required":true,"sortable":true,"type":"number"}]'
@@ -59,6 +60,7 @@ jobs:
         with:
           backend_url: https://httpbin.org/anything
           report_path: non_existent_report.json
+          user_id: '000000000000000000'
           list_code: 'test-missing'
           header_config: '[{"field":"metric","name":"Metric","required":true,"sortable":true,"type":"string"},{"field":"value","name":"Value","required":true,"sortable":true,"type":"number"}]'
           fail_on_error: 'true'
@@ -83,6 +85,7 @@ jobs:
         with:
           backend_url: https://httpbin.org/anything
           report_path: non_existent_report.json
+          user_id: '000000000000000000'
           list_code: 'test-warn'
           header_config: '[{"field":"metric","name":"Metric","required":true,"sortable":true,"type":"string"},{"field":"value","name":"Value","required":true,"sortable":true,"type":"number"}]'
           fail_on_error: 'false'
@@ -116,6 +119,7 @@ jobs:
         with:
           backend_url: https://httpbin.org/anything
           report_path: benchmark_metrics.json
+          user_id: '000000000000000000'
           list_code: 'test-defaults'
           header_config: '[{"field":"metric","name":"Metric","required":true,"sortable":true,"type":"string"},{"field":"p50","name":"P50","required":true,"sortable":true,"type":"number"},{"field":"p99","name":"P99","required":true,"sortable":true,"type":"number"}]'
           fail_on_error: 'false'
@@ -167,6 +171,7 @@ jobs:
         with:
           backend_url: https://httpbin.org/anything
           report_path: benchmark_metrics.json
+          user_id: '000000000000000000'
           list_code: 'my-list-code'
           header_config: '[{"field":"metric","name":"Metric","required":true,"sortable":true,"type":"string"},{"field":"p50","name":"P50","required":true,"sortable":true,"type":"number"},{"field":"p99","name":"P99","required":true,"sortable":true,"type":"number"}]'
           fail_on_error: 'false'
@@ -207,6 +212,7 @@ jobs:
         with:
           backend_url: https://httpbin.org/anything
           report_path: benchmark_metrics.json
+          user_id: '000000000000000000'
           list_code: 'test-pagination'
           header_config: '[{"field":"metric","name":"Metric","required":true,"sortable":true,"type":"string"},{"field":"p50","name":"P50","required":true,"sortable":true,"type":"number"},{"field":"p99","name":"P99","required":true,"sortable":true,"type":"number"}]'
           page_size: '5'
@@ -259,6 +265,7 @@ jobs:
         with:
           backend_url: https://httpbin.org/anything
           report_path: benchmark_metrics.json
+          user_id: '000000000000000000'
           list_code: 'test-auth'
           header_config: '[{"field":"metric","name":"Metric","required":true,"sortable":true,"type":"string"},{"field":"p50","name":"P50","required":true,"sortable":true,"type":"number"},{"field":"p99","name":"P99","required":true,"sortable":true,"type":"number"}]'
           api_token: 'test-token-abc123'
@@ -300,6 +307,7 @@ jobs:
         with:
           backend_url: https://httpbin.org/anything
           report_path: benchmark_metrics.json
+          user_id: '000000000000000000'
           list_code: 'test-run-id'
           header_config: '[{"field":"metric","name":"Metric","required":true,"sortable":true,"type":"string"},{"field":"p50","name":"P50","required":true,"sortable":true,"type":"number"},{"field":"p99","name":"P99","required":true,"sortable":true,"type":"number"}]'
           run_id: 'custom-run-12345'
@@ -340,6 +348,7 @@ jobs:
         with:
           backend_url: https://httpbin.org/anything
           report_path: benchmark_metrics.json
+          user_id: '000000000000000000'
           list_code: 'test-object-value'
           header_config: '[{"field":"metric","name":"Metric","required":true,"sortable":true,"type":"string"},{"field":"p50","name":"P50","required":true,"sortable":true,"type":"number"},{"field":"p99","name":"P99","required":true,"sortable":true,"type":"number"},{"field":"mean","name":"Mean","required":true,"sortable":true,"type":"number"}]'
           fail_on_error: 'false'
@@ -389,6 +398,7 @@ jobs:
         with:
           backend_url: https://httpbin.org/anything
           report_path: benchmark_metrics.json
+          user_id: '000000000000000000'
           list_code: 'test-validation'
           header_config: '[{"field":"metric","name":"Metric","required":true,"sortable":true,"type":"string"},{"field":"p50","name":"P50","required":true,"sortable":true,"type":"number"}]'
           fail_on_error: 'true'
@@ -422,6 +432,7 @@ jobs:
         with:
           backend_url: https://httpbin.org/anything
           report_path: benchmark_metrics.json
+          user_id: '000000000000000000'
           list_code: 'test-validation-warn'
           header_config: '[{"field":"metric","name":"Metric","required":true,"sortable":true,"type":"string"},{"field":"p50","name":"P50","required":true,"sortable":true,"type":"number"},{"field":"p99","name":"P99","required":true,"sortable":true,"type":"number"}]'
           fail_on_error: 'false'

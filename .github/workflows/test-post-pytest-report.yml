@@ -23,6 +23,7 @@ jobs:
         with:
           backend_url: https://httpbin.org/post
           report_path: report.json
+          user_id: '000000000000000000'
 
       - name: Assert HTTP 200
         run: |
@@ -45,6 +46,7 @@ jobs:
         with:
           backend_url: https://httpbin.org/post
           report_path: non_existent_report.json
+          user_id: '000000000000000000'
           fail_on_error: 'true'
 
       - name: Assert step failed
@@ -70,6 +72,7 @@ jobs:
         with:
           backend_url: https://httpbin.org/post
           report_path: report.json
+          user_id: '000000000000000000'
 
       - name: Verify resolved defaults via httpbin response
         run: |
