@@ -159,8 +159,19 @@ runs:
         # Add user ID header
         CURL_ARGS+=(-H "x-user-id: ${{ inputs.user_id }}")
 
-        # Execute
-        HTTP_STATUS=$(curl "${CURL_ARGS[@]}" "${{ inputs.backend_url }}")
+        # Execute (capture curl exit code without triggering bash -e)
+        HTTP_STATUS=$(curl "${CURL_ARGS[@]}" "${{ inputs.backend_url }}") || CURL_EXIT=$?
+
+        if [ -n "${CURL_EXIT:-}" ]; then
+          echo "status=" >> "$GITHUB_OUTPUT"
+          echo "::error::curl failed with exit code $CURL_EXIT (network/transport error)"
+          if [ "${{ inputs.fail_on_error }}" = "true" ]; then
+            exit 1
+          else
+            echo "::warning::curl failed (exit code $CURL_EXIT), but fail_on_error is false."
+            exit 0
+          fi
+        fi
 
         echo "status=$HTTP_STATUS" >> "$GITHUB_OUTPUT"
         echo "HTTP status: $HTTP_STATUS"
