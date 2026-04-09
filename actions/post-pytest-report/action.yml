@@ -117,6 +117,7 @@ runs:
       run: |
         # Build curl command
         CURL_ARGS=(
+          --noproxy '*'
           -s
           -X POST
           -w '%{http_code}'

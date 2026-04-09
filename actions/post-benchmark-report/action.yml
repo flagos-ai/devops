@@ -166,6 +166,7 @@ runs:
         echo "$HEADER_PAYLOAD" | jq .
 
         CURL_ARGS=(
+          --noproxy '*'
           -s -X POST
           -w '%{http_code}'
           -o /tmp/header_response.txt
@@ -275,6 +276,7 @@ runs:
         echo "$DATA_PAYLOAD" | jq '{items_count: (.items | length), first_item: .items[0]}'
 
         CURL_ARGS=(
+          --noproxy '*'
           -s -X POST
           -w '%{http_code}'
           -o /tmp/upload_response.txt
@@ -323,6 +325,7 @@ runs:
         echo "URL: $QUERY_URL"
 
         CURL_ARGS=(
+          --noproxy '*'
           -s -X GET
           -w '\n%{http_code}'
           -H "Accept: application/json"
